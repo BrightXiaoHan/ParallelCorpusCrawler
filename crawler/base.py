@@ -24,8 +24,8 @@ class BaseCrawler(object):
     @classmethod
     def from_excel(cls,
                    excel_path: str,
-                   src_column: int = 1,
-                   tgt_column: int = 2,
+                   src_column: int = 0,
+                   tgt_column: int = 1,
                    skip_first_column: bool = True,
                    **kwargs):
         src_words, tgt_words = [], []
