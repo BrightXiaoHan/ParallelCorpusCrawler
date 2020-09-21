@@ -2,7 +2,7 @@ import pickle
 import logging
 
 from openpyxl import load_workbook, Workbook
-from typing import List, Tuple
+from typing import Iterable, List
 from tqdm import tqdm
 
 
@@ -45,14 +45,17 @@ class BaseCrawler(object):
 
     @classmethod
     def from_checkpoint(cls, checkpoint_path: str):
-        obj = pickle.loads(checkpoint_path)
+        f = open(checkpoint_path, 'rb')
+        obj = pickle.load(f)
         assert isinstance(obj, cls)
+        f.close()
 
     def crawl(self):
         for i, seeds in tqdm(enumerate(zip(self.src_kw, self.tgt_kw))):
             for seed, tp in zip(seeds, ["src", "tgt"]):
                 try:
                     for pair in self._crawl_single(seed, type=tp):
+                        pair.extend(seeds)
                         self.corpus.append(pair)
                 except Exception as e:
                     logging.log(
@@ -65,13 +68,17 @@ class BaseCrawler(object):
 
         sheet.cell(row=1, column=1, value="Source Sentence")
         sheet.cell(row=1, column=2, value="Target Sentence")
+        sheet.cell(row=1, column=3, value="Seed Source")
+        sheet.cell(row=1, column=4, value="Seed Target")
 
-        for i, (src, tgt) in enumerate(self.corpus):
+        for i, (src, tgt, src_seed, tgt_seed) in enumerate(self.corpus):
             i += 2
             sheet.cell(row=i, column=1, value=src)
             sheet.cell(row=i, column=2, value=tgt)
+            sheet.cell(row=i, column=3, value=src_seed)
+            sheet.cell(row=i, column=4, value=tgt_seed)
 
         wb.save(file_path)
 
-    def _crawl_single(self, seed: str, type: str = "src") -> Tuple[str, str]:
+    def _crawl_single(self, seed: str, type: str = "src") -> Iterable[List[str]]:
         raise NotImplementedError
