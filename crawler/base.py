@@ -10,10 +10,14 @@ class BaseCrawler(object):
 
     def __init__(self,
                  src_kw: List[str],
-                 tgt_kw: List[str]) -> None:
+                 tgt_kw: List[str],
+                 src_lang: str,
+                 tgt_lang: str) -> None:
 
         self.src_kw = src_kw
         self.tgt_kw = tgt_kw
+        self.src_lang = src_lang
+        self.tgt_lang = tgt_lang
 
         self.error_list = {
             "src": [],
@@ -26,13 +30,13 @@ class BaseCrawler(object):
                    excel_path: str,
                    src_column: int = 0,
                    tgt_column: int = 1,
-                   skip_first_column: bool = True,
+                   skip_first_row: bool = True,
                    **kwargs):
         src_words, tgt_words = [], []
         sheet = load_workbook(filename=excel_path, read_only=True).active
 
         for i, row in tqdm(enumerate(sheet.iter_rows())):
-            if not i and skip_first_column:
+            if not i and skip_first_row:
                 continue
             src = row[src_column].value
             tgt = row[tgt_column].value
@@ -62,7 +66,7 @@ class BaseCrawler(object):
                         level=logging.WARNING, msg="Crawl with seed %s error. Error message: %s" % (seed, e))
                     self.error_list[tp].append(seed)
 
-    def save(self, file_path: str):
+    def save_as_xlsx(self, file_path: str):
         wb = Workbook()
         sheet = wb.active
 
@@ -71,7 +75,7 @@ class BaseCrawler(object):
         sheet.cell(row=1, column=3, value="Seed Source")
         sheet.cell(row=1, column=4, value="Seed Target")
 
-        for i, (src, tgt, src_seed, tgt_seed) in enumerate(self.corpus):
+        for i, (src, tgt, src_seed, tgt_seed) in tqdm(enumerate(self.corpus)):
             i += 2
             sheet.cell(row=i, column=1, value=src)
             sheet.cell(row=i, column=2, value=tgt)
